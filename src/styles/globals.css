@@ -1,26 +1,102 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --normal-primary: #a3a3a3;
+  --normal-surface: #f5f5f5;
+  --blue-primary: #818cf8;
+  --blue-surface: #e0e7ff;
+  --green-primary: #34d399;
+  --green-surface: #d1fae5;
+}
+/* 默认主题 (normal) - 中性色 */
+@theme {
+  --color-primary: #171717;  
+  --color-surface: #f5f5f5;     
+  --color-background: #fafafa;   
+  --color-title: #171717;        
+  --color-text: #262626;       
+  --color-bd: #d4d4d4;  
+  --color-no-active: #fafafa;
+  --color-primary-1: #737373;
+  --color-primary-2: #525252;
+  --color-primary-3: #404040;
+  --color-primary-4: #262626;
+  --color-primary-5: #171717;
+  --color-btn-bd: #525252;
+  --color-btn-bd-hover: #
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+/* 雾蓝主题 - 靓蓝色 */
+[data-theme='blue'] {
+  --color-primary: var(--blue-primary);   
+  --color-surface: #e0e7ff;       
+  --color-background: #eef2ff;  
+  --color-title: #171717;        
+  --color-text: #262626;       
+  --color-bd: #d4d4d4;  
+  --color-no-active: #fafafa;
+  --color-primary-1: #eef2ff;
+  --color-primary-2: #e0e7ff;
+  --color-primary-3: #c7d2fe;
+  --color-primary-4: #a5b4fc;
+  --color-primary-5: #818cf8;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+/* 青灰主题 - 紫罗兰 */
+[data-theme='purple'] {
+  --color-primary: #a78bfa;   
+  --color-surface: #ede9fe;       
+  --color-background: #f5f3ff;  
+  --color-title: #171717;        
+  --color-text: #262626;       
+  --color-bd: #d4d4d4;  
+  --color-no-active: #fafafa;
+  --color-primary-1: #f5f3ff;
+  --color-primary-2: #ede9fe;
+  --color-primary-3: #ddd6fe;
+  --color-primary-4: #c4b5fd;
+  --color-primary-5: #a78bfa;
 }
 
+/* 全局应用基础样式 */
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background-color: var(--color-background);
+  color: var(--color-text);
+  /* 添加颜色过渡动画，让切换不生硬 */
+  transition: background-color 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+              color 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+              border-color 0.3s ease;
+}
+
+/* 让所有使用这些颜色的元素都有过渡效果 */
+* {
+  transition-property: background-color, border-color, color, fill, stroke;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 300ms;
+}
+
+/* 全局滚动条样式 */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-background);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-primary-3);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-primary-4);
+}
+
+/* Firefox 支持 */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-primary-3) var(--color-background);
 }

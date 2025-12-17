@@ -7,6 +7,7 @@
     "strict": true,
     "noEmit": true,
     "esModuleInterop": true,
+    "noImplicitAny": false, // 添加这一行，允许隐式 any
     "module": "esnext",
     "moduleResolution": "bundler",
     "resolveJsonModule": true,
