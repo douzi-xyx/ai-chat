@@ -41,7 +41,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       res.write(`data: ${JSON.stringify({ type: 'end', thread_id })}\n\n`);
       res.end();
     } catch (error) {
-      console.error('流式输出错误：', error);
+      // console.error('流式输出错误：', error);
       res.write(`data: ${JSON.stringify({ type: 'error', message: '服务器错误' })}\n\n`);
       res.end();
     }
@@ -52,7 +52,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const state = await app.getState({
       configurable: { thread_id: conversationId as string },
     });
-    console.log('state', state);
+    // console.log('state', state);
     res.status(200).json({ data: state?.values?.messages || [] });
   }
 }

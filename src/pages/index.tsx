@@ -32,7 +32,7 @@ export default function Home() {
     setActiveConversationId,
     setConversations,
   });
-  console.log('activeConversation', activeConversation);
+  // console.log('activeConversation', activeConversation);
   return (
     <div
       className={`${geistSans.variable} ${geistMono.variable} flex flex-col h-screen font-sans relative overflow-hidden`}

@@ -17,6 +17,6 @@ const getSessions = async (req: NextApiRequest, res: NextApiResponse) => {
       data: sessionList,
     });
   } catch (error) {
-    console.log('error', error);
+    // console.log('error', error);
   }
 };

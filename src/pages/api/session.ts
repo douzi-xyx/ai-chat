@@ -20,7 +20,7 @@ const handleCreateSession = async (req: NextApiRequest, res: NextApiResponse) =>
       data,
     });
   } catch (error) {
-    console.log('error', error);
+    // console.log('error', error);
     return res.status(500).json({
       message: '会话创建失败',
     });

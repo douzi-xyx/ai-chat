@@ -13,7 +13,7 @@ export default function useConversation() {
 
   const handleNewConversation = async () => {
     try {
-      console.log('handleNewConversation');
+      // console.log('handleNewConversation');
       const name = '新对话';
       const response = await fetch('/api/session', {
         method: 'POST',
@@ -37,7 +37,7 @@ export default function useConversation() {
       setConversations((prev) => [newConv, ...prev]);
       setActiveConversationId(newConv.id);
     } catch (error) {
-      console.log('error', error);
+      // console.log('error', error);
     }
   };
 
@@ -60,7 +60,7 @@ export default function useConversation() {
         }))
       );
     } catch (error) {
-      console.log('error', error);
+      // console.log('error', error);
       // enqueueSnackbar(message, {
       //   variant: 'error',
       // });
@@ -98,7 +98,7 @@ export default function useConversation() {
       setConversations((prev) =>
         prev.map((conv) => (conv.id === id ? { ...conv, messages: formattedMessages } : conv))
       );
-      console.log('messages', messages);
+      // console.log('messages', messages);
     } catch (error) {}
   };
   useEffect(() => {

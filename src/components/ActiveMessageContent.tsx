@@ -1,11 +1,45 @@
+import { useEffect, useRef, useState } from 'react';
 import { Message } from '../../types';
 import MarkdownRender from './MarkdownRender';
 
 export default function ActiveMessageContent({ messages }: { messages: Message[] }) {
+  const scrollRef = useRef<HTMLDivElement | null>(null);
+  const [autoScroll, setAutoScroll] = useState(true);
+  const lastMessageIdRef = useRef<string | undefined>(undefined);
+
+  const scrollToBottom = (behavior: ScrollBehavior = 'smooth') => {
+    const el = scrollRef.current;
+    if (!el) return;
+    el.scrollTo({ top: el.scrollHeight, behavior });
+  };
+
+  useEffect(() => {
+    const lastId = messages?.[messages.length - 1]?.id;
+    if (!lastId) return;
+
+    lastMessageIdRef.current = lastId;
+
+    if (autoScroll) {
+      scrollToBottom('smooth');
+    }
+  }, [messages, autoScroll]);
+
+  const handleScroll = () => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const distanceToBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
+    const nearBottom = distanceToBottom < 120; // 阈值：距离底部 120px 内自动滚动
+    setAutoScroll(nearBottom);
+  };
+
   return (
     <div className={`relative max-w-4xl mx-auto h-full flex flex-col`}>
       <div className=" backdrop-blur-md flex-1 flex flex-col overflow-hidden">
-        <div className="flex-1 overflow-y-auto p-6">
+        <div
+          ref={scrollRef}
+          onScroll={handleScroll}
+          className="flex-1 overflow-y-auto p-6 scroll-smooth"
+        >
           <div className="space-y-4">
             {messages?.length === 0 ? (
               <div className="flex items-center justify-center min-h-full text-purple-400">
@@ -74,6 +108,17 @@ export default function ActiveMessageContent({ messages }: { messages: Message[]
             )}
           </div>
         </div>
+        {!autoScroll && messages?.length > 0 && (
+          <button
+            onClick={() => {
+              setAutoScroll(true);
+              scrollToBottom('smooth');
+            }}
+            className="absolute bottom-5 right-5 px-3 py-2 rounded-xl bg-primary-4 text-white text-xs shadow-lg hover:bg-primary-5 transition-all"
+          >
+            回到底部
+          </button>
+        )}
       </div>
     </div>
   );

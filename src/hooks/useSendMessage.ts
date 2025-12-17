@@ -16,8 +16,9 @@ export default function useSendMessage({
   const handleSendMessage = async () => {
     if (!inputValue.trim()) return;
 
+    const dateId = Date.now().toString();
     const userMessage: Message = {
-      id: Date.now().toString(),
+      id: 'user-' + dateId,
       content: inputValue,
       role: 'user',
     };
@@ -26,7 +27,7 @@ export default function useSendMessage({
 
     // 如果没有会话id，先创建会话id
     if (!activeConversationId) {
-      const name = '新对话';
+      const name = inputValue.slice(0, 30);
       const response = await fetch('/api/session', {
         method: 'POST',
         body: JSON.stringify({ name }),
@@ -35,11 +36,10 @@ export default function useSendMessage({
       const { data: sessionData, message } = data;
 
       nowConversationId = sessionData?.id;
-      setActiveConversationId(nowConversationId);
       setConversations((conversations) => [
         ...conversations,
         {
-          id: sessionData.id,
+          id: nowConversationId || '',
           title: name,
           messages: [userMessage],
           updatedAt: new Date(sessionData.created_at),
@@ -58,9 +58,10 @@ export default function useSendMessage({
         )
       );
     }
+    setInputValue('');
 
     // 创建 AI 消息占位符
-    const assistantMessageId = (Date.now() + 1).toString();
+    const assistantMessageId = 'assistant-' + dateId;
     const assistantMessage: Message = {
       id: assistantMessageId,
       content: '',
@@ -94,7 +95,7 @@ export default function useSendMessage({
       const result = await reader.read();
       if (result.done) break;
       const { value } = result;
-      console.log('value', value);
+      // console.log('value', value);
       const text = decoder.decode(value);
       const lines = text.split('\n\n').filter(Boolean);
 
@@ -106,7 +107,7 @@ export default function useSendMessage({
             if (!data) continue;
             if (data.type === 'chunk') {
               const chunkContent = data.content;
-              console.log('chunkContent', chunkContent);
+              // console.log('chunkContent', chunkContent);
               setConversations((prev) =>
                 prev.map((conv) =>
                   conv.id === nowConversationId
@@ -123,7 +124,7 @@ export default function useSendMessage({
                 )
               );
             } else if (data.type === 'end') {
-              console.log('end');
+              // console.log('end');
               setConversations((prev) =>
                 prev.map((conv) =>
                   conv.id === nowConversationId
@@ -136,7 +137,7 @@ export default function useSendMessage({
               );
               break;
             } else if (data.type === 'error') {
-              console.error('error', data.message);
+              // console.error('error', data.message);
               setConversations((prev) =>
                 prev.map((conv) =>
                   conv.id === nowConversationId
@@ -157,7 +158,7 @@ export default function useSendMessage({
       }
     }
 
-    setInputValue('');
+    setActiveConversationId(nowConversationId);
   };
 
   const handleKeyPress = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
