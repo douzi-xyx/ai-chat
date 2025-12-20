@@ -3,13 +3,28 @@ import { Conversation, Message } from '@/types';
 import { useSnackbar } from 'notistack';
 import { getAllSessions } from '@/agent/db';
 
+const ACTIVE_CONVERSATION_KEY = 'active-conversation-id';
+
 export default function useConversation() {
   const [conversations, setConversations] = useState<Conversation[]>([]);
-  const [activeConversationId, setActiveConversationId] = useState<string>();
+  const [activeConversationId, setActiveConversationId] = useState<string | undefined>();
   const { enqueueSnackbar } = useSnackbar();
+
+  // 初始化时读取
+  useEffect(() => {
+    const saved = localStorage.getItem(ACTIVE_CONVERSATION_KEY);
+    if (saved) {
+      setActiveConversationId(saved);
+    }
+  }, []);
 
   const activeConversation =
     conversations.find((conv) => conv.id === activeConversationId) || conversations[0];
+
+  const handleChangeActiveConversationId = (id: string) => {
+    setActiveConversationId(id);
+    localStorage.setItem(ACTIVE_CONVERSATION_KEY, id);
+  };
 
   const handleNewConversation = async () => {
     try {
@@ -35,7 +50,7 @@ export default function useConversation() {
         updatedAt: new Date(created_at),
       };
       setConversations((prev) => [newConv, ...prev]);
-      setActiveConversationId(newConv.id);
+      handleChangeActiveConversationId(newConv.id);
     } catch (error) {
       // console.log('error', error);
     }
@@ -109,7 +124,7 @@ export default function useConversation() {
     conversations,
     setConversations,
     activeConversationId,
-    setActiveConversationId,
+    setActiveConversationId: handleChangeActiveConversationId,
     activeConversation,
     handleNewConversation,
   };
