@@ -15,9 +15,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     res.flushHeaders();
 
     try {
-      const { message, conversationId: thread_id } = JSON.parse(req.body);
+      const { message, conversationId: thread_id, model, toolIds } = JSON.parse(req.body);
 
-      const app = await getAgentApp();
+      const app = await getAgentApp(model, toolIds as string[]);
 
       for await (const event of await app.streamEvents(
         { messages: [new HumanMessage({ content: message })] },
@@ -41,7 +41,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       res.write(`data: ${JSON.stringify({ type: 'end', thread_id })}\n\n`);
       res.end();
     } catch (error) {
-      // console.error('流式输出错误：', error);
+      console.error('流式输出错误：', error);
       res.write(`data: ${JSON.stringify({ type: 'error', message: '服务器错误' })}\n\n`);
       res.end();
     }

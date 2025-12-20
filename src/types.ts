@@ -11,3 +11,10 @@ export interface Conversation {
   messages: Message[];
   updatedAt: Date;
 }
+
+export type Tool = {
+  id: string;
+  name: string;
+  icon: string | React.ReactNode;
+  description: string;
+};

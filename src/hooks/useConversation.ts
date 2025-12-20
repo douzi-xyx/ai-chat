@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Conversation, Message } from '../../types';
+import { Conversation, Message } from '@/types';
 import { useSnackbar } from 'notistack';
 import { getAllSessions } from '@/agent/db';
 

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Message } from '../../types';
+import { Message } from '@/types';
 import MarkdownRender from './MarkdownRender';
 
 export default function ActiveMessageContent({ messages }: { messages: Message[] }) {

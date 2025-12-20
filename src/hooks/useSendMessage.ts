@@ -1,5 +1,5 @@
 import { Dispatch, SetStateAction, useState } from 'react';
-import { Conversation, Message } from '../../types';
+import { Conversation, Message } from '@/types';
 import { enqueueSnackbar } from 'notistack';
 
 export default function useSendMessage({
@@ -13,7 +13,7 @@ export default function useSendMessage({
 }) {
   const [inputValue, setInputValue] = useState<string>('');
 
-  const handleSendMessage = async () => {
+  const handleSendMessage = async (model: string, selectedTools: string[]) => {
     if (!inputValue.trim()) return;
 
     const dateId = Date.now().toString();
@@ -84,7 +84,12 @@ export default function useSendMessage({
 
     const response = await fetch('/api/chat', {
       method: 'POST',
-      body: JSON.stringify({ message: inputValue, conversationId: nowConversationId }),
+      body: JSON.stringify({
+        message: inputValue,
+        conversationId: nowConversationId,
+        model,
+        toolIds: selectedTools,
+      }),
     });
 
     const reader = response.body?.getReader();
@@ -102,6 +107,7 @@ export default function useSendMessage({
       for (const line of lines) {
         if (line.startsWith('data: ')) {
           const content = line.split('data: ')[1];
+          console.log('content', content);
           if (content) {
             const data = JSON.parse(content);
             if (!data) continue;
@@ -148,7 +154,7 @@ export default function useSendMessage({
                     : conv
                 )
               );
-              enqueueSnackbar(data.message, {
+              enqueueSnackbar('发生错误', {
                 variant: 'error',
               });
               break;
@@ -161,10 +167,14 @@ export default function useSendMessage({
     setActiveConversationId(nowConversationId);
   };
 
-  const handleKeyPress = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+  const handleKeyPress = (
+    e: React.KeyboardEvent<HTMLTextAreaElement>,
+    model: string,
+    selectedTools: string[]
+  ) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
-      handleSendMessage();
+      handleSendMessage(model, selectedTools);
     }
   };
 
