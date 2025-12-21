@@ -1,13 +1,11 @@
 import { useState } from 'react';
 import { Geist, Geist_Mono } from 'next/font/google';
-import ButtonGlobal from '../components/AnimationButton';
-import styles from '../styles/index.module.css';
-import ThemeSwitcher from '../components/ThemeSwitcher';
 import useSendMessage from '../hooks/useSendMessage';
 import useConversation from '@/hooks/useConversation';
 import ActiveMessageContent from '@/components/ActiveMessageContent';
 import Header from '@/components/Header';
 import UserInput from '@/components/UserInput';
+import ConversationList from '@/components/ConversationList';
 import { toolSets } from '@/agent/tools/toolSets';
 
 const geistSans = Geist({
@@ -73,6 +71,8 @@ export default function Home() {
     activeConversationId,
     setActiveConversationId,
     activeConversation,
+    handleEditConversation,
+    handleDeleteConversation,
   } = useConversation();
 
   const { handleKeyPress, handleSendMessage, inputValue, setInputValue } = useSendMessage({
@@ -94,34 +94,14 @@ export default function Home() {
       {/* 内容区域，分为左侧会话列表和右侧内容区域 */}
       <div className="flex flex-1 min-h-0">
         {/* 左侧会话列表 */}
-        <div className="w-64 border-r border-bd/50 bg-background/20 backdrop-blur-md flex flex-col">
-          <div className="p-4 border-b border-bd/30">
-            <button
-              onClick={handleNewConversation}
-              className="cursor-pointer w-full px-4 py-2.5  bg-primary-4 text-white rounded-2xl transition-all font-medium active:scale-[0.98]"
-            >
-              + 新建对话
-            </button>
-            {/* <ButtonGlobal>
-              
-            </ButtonGlobal> */}
-          </div>
-          <div className="flex-1 overflow-y-auto bg-background">
-            {conversations.map((conv) => (
-              <div
-                key={conv.id}
-                onClick={() => setActiveConversationId(conv.id)}
-                className={`p-3 cursor-pointer border-b border-bd/20 hover:bg-primary-5 transition-all hover:text-white ${
-                  activeConversationId === conv.id
-                    ? 'bg-primary-4 border-l border-l-teal-300/60 text-white'
-                    : 'text-title'
-                }`}
-              >
-                <div className={`font-medium text-sm truncate`}>{conv.title}</div>
-              </div>
-            ))}
-          </div>
-        </div>
+        <ConversationList
+          conversations={conversations}
+          activeConversationId={activeConversationId}
+          onSelect={setActiveConversationId}
+          onNewConversation={handleNewConversation}
+          onEdit={handleEditConversation}
+          onDelete={handleDeleteConversation}
+        />
 
         {/* 右侧内容区域 */}
         <div className="flex-1 flex flex-col">

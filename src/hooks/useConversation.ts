@@ -120,6 +120,61 @@ export default function useConversation() {
     getMessages(activeConversationId);
   }, [activeConversationId]);
 
+  // 编辑会话标题
+  const handleEditConversation = async (id: string, newTitle: string) => {
+    try {
+      const response = await fetch(`/api/session/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: newTitle }),
+      });
+      const data = await response.json();
+
+      if (response.ok) {
+        setConversations((prev) =>
+          prev.map((conv) => (conv.id === id ? { ...conv, title: newTitle } : conv))
+        );
+        enqueueSnackbar(data.message || '修改成功', { variant: 'success' });
+      } else {
+        enqueueSnackbar(data.message || '修改失败', { variant: 'error' });
+      }
+    } catch (error) {
+      enqueueSnackbar('修改失败', { variant: 'error' });
+    }
+  };
+
+  // 删除会话
+  const handleDeleteConversation = async (id: string) => {
+    try {
+      const response = await fetch(`/api/session/${id}`, {
+        method: 'DELETE',
+      });
+      const data = await response.json();
+
+      if (response.ok) {
+        // 如果删除的是当前激活的会话，切换到上一个会话
+        if (activeConversationId === id) {
+          const currentIndex = conversations.findIndex((conv) => conv.id === id);
+          const remaining = conversations.filter((conv) => conv.id !== id);
+          if (remaining.length > 0) {
+            // 优先切换到上一个会话，如果没有上一个则切换到下一个（即新的当前位置）
+            const newIndex = currentIndex > 0 ? currentIndex - 1 : 0;
+            handleChangeActiveConversationId(remaining[newIndex].id);
+          } else {
+            setActiveConversationId(undefined);
+            localStorage.removeItem(ACTIVE_CONVERSATION_KEY);
+          }
+        }
+        setConversations((prev) => prev.filter((conv) => conv.id !== id));
+        enqueueSnackbar(data.message || '删除成功', { variant: 'success' });
+      } else {
+        enqueueSnackbar(data.message || '删除失败', { variant: 'error' });
+      }
+    } catch (error) {
+      enqueueSnackbar('删除失败', { variant: 'error' });
+    }
+  };
+
   return {
     conversations,
     setConversations,
@@ -127,5 +182,7 @@ export default function useConversation() {
     setActiveConversationId: handleChangeActiveConversationId,
     activeConversation,
     handleNewConversation,
+    handleEditConversation,
+    handleDeleteConversation,
   };
 }

@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import styles from '@/styles/index.module.css';
 import { Tool } from '@/types';
 import ToolSelect from './ToolSelect';
 import ModelSelect from './ModelSelect';
+import ImageUpload from './ImageUpload';
 
 export default function UserInput({
   model,
@@ -28,6 +29,27 @@ export default function UserInput({
   toolList: Tool[];
 }) {
   const [selectedTools, setSelectedTools] = useState<string[]>([]);
+  const [selectedImages, setSelectedImages] = useState<File[]>([]);
+
+  // 为每个文件生成预览 URL，并缓存
+  const previewUrls = useMemo(() => {
+    return selectedImages.map((file) => URL.createObjectURL(file));
+  }, [selectedImages]);
+
+  // 组件卸载或图片变化时清理 URL
+  useEffect(() => {
+    return () => {
+      previewUrls.forEach((url) => URL.revokeObjectURL(url));
+    };
+  }, [previewUrls]);
+
+  const handleImageSelect = (files: File[]) => {
+    setSelectedImages((prev) => [...prev, ...files]);
+  };
+
+  const handleRemoveImage = (index: number) => {
+    setSelectedImages((prev) => prev.filter((_, i) => i !== index));
+  };
 
   return (
     <div className="p-4 pt-0">
@@ -48,6 +70,30 @@ export default function UserInput({
             {/* 顶部渐变装饰线 */}
             <div className="absolute top-0 left-4 right-4 h-[2px] bg-gradient-to-r from-transparent via-primary-4/30 to-transparent rounded-full" />
 
+            {/* 图片预览区域 */}
+            {selectedImages.length > 0 && (
+              <div className="flex flex-wrap gap-2 px-4 pt-4">
+                {selectedImages.map((file, index) => (
+                  <div key={`${file.name}-${file.size}-${index}`} className="relative group">
+                    <img
+                      src={previewUrls[index]}
+                      alt={`预览 ${index + 1}`}
+                      className="w-16 h-16 object-cover rounded-lg border border-bd/30 shadow-sm"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveImage(index)}
+                      className="absolute -top-2 -right-2 w-5 h-5 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity text-xs shadow-md"
+                    >
+                      ×
+                    </button>
+                    <div className="absolute bottom-0 left-0 right-0 bg-black/50 text-white text-[10px] px-1 py-0.5 rounded-b-lg truncate">
+                      {file.name}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
             {/* 输入区域 */}
             <div className="p-4">
               <textarea
@@ -73,6 +119,10 @@ export default function UserInput({
                   />
                 </svg>
                 <span>Enter 发送 · Shift+Enter 换行</span>
+
+                {/* 图片上传组件 */}
+                <ImageUpload onImageSelect={handleImageSelect} />
+
                 {/* 工具选择组件 */}
                 <ToolSelect
                   toolList={toolList}

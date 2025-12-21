@@ -8,7 +8,7 @@ export default function useSendMessage({
   setConversations,
 }: {
   activeConversationId?: string;
-  setActiveConversationId: Dispatch<SetStateAction<string | undefined>>;
+  setActiveConversationId: (id: string) => void;
   setConversations: Dispatch<SetStateAction<Conversation[]>>;
 }) {
   const [inputValue, setInputValue] = useState<string>('');
@@ -164,7 +164,9 @@ export default function useSendMessage({
       }
     }
 
-    setActiveConversationId(nowConversationId);
+    if (nowConversationId) {
+      setActiveConversationId(nowConversationId);
+    }
   };
 
   const handleKeyPress = (

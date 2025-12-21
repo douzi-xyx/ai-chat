@@ -8,13 +8,15 @@ import {
 } from '@langchain/langgraph';
 import { ChatOpenAI } from '@langchain/openai';
 import { AIMessage, BaseMessage } from '@langchain/core/messages';
-import { db, initSessionTable } from './db';
+import { initSessionTable } from './db';
 import { SqliteSaver } from '@langchain/langgraph-checkpoint-sqlite';
 import { ChatGoogleGenerativeAI } from '@langchain/google-genai';
 import { tool } from '@langchain/core/tools';
 import { z } from 'zod';
 import { ToolNode } from '@langchain/langgraph/prebuilt';
 import { createLangChainTools } from './tools/toolConfig';
+import path from 'path';
+import Database from 'better-sqlite3';
 
 const createModel = (model?: string) => {
   const [provider, modelName] = model?.split(':') || ['openai', process.env.OPENAI_MODEL_NAME];
@@ -46,9 +48,10 @@ const createWorlflow = (modelId?: string, toolIds?: string[]) => {
   const langChainTools = createLangChainTools(toolIds);
 
   const modelWithTools = toolIds?.length ? model.bindTools(langChainTools) : model;
-
+  console.log('toolIds', toolIds);
   const llmNode = async (state: typeof MessagesAnnotation.State) => {
     try {
+      console.log('llmNode', state.messages);
       const res = await modelWithTools.invoke(state.messages);
 
       return { messages: [res] };
@@ -109,11 +112,13 @@ const createWorlflow = (modelId?: string, toolIds?: string[]) => {
 // 全局存储不同配置的workflow
 
 const workflowCache = new Map<string, ReturnType<typeof createWorlflow>>();
-
+const dbPath = path.resolve(process.cwd(), 'chat_history.db');
+export const db = new Database(dbPath);
 let checkpointer: SqliteSaver;
 function getCheckpointer() {
-  console.log('初始化 SqliteSaver，数据库路径:');
+  console.log('判断是否要初始化 SqliteSaver', !checkpointer);
   if (!checkpointer) {
+    console.log('初始化 SqliteSaver，数据库路径:');
     try {
       initSessionTable();
       checkpointer = new SqliteSaver(db);
@@ -123,6 +128,7 @@ function getCheckpointer() {
       throw error;
     }
   }
+  console.log('checkpointer', checkpointer);
   return checkpointer;
 }
 
@@ -143,6 +149,12 @@ export const getAgentApp = (model?: string, toolIds?: string[]) => {
   const app = workflow.compile({
     checkpointer,
   });
+
+  if (workflowCache.size > 20) {
+    const firstKey = workflowCache.keys().next().value;
+    workflowCache.delete(firstKey);
+    console.log('删除缓存:', firstKey);
+  }
   workflowCache.set(cacheKey, app);
 
   return app;

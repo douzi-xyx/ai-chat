@@ -1,6 +1,6 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { randomUUID } from 'node:crypto';
-import { createSession, getAllSessions } from '@/agent/db';
+import { createSession, deleteSession, getAllSessions } from '@/agent/db';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const { method } = req;
@@ -26,16 +26,3 @@ const handleCreateSession = async (req: NextApiRequest, res: NextApiResponse) =>
     });
   }
 };
-
-// const getSessionById = async (req: NextApiRequest, res: NextApiResponse) => {
-//   try {
-//     const { id } = req.query;
-//     const session = getSessionById(id);
-//     return res.status(200).json({
-//       message: '会话列表获取成功',
-//       data: session,
-//     });
-//   } catch (error) {
-//     console.log('error', error);
-//   }
-// };

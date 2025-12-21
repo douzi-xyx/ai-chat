@@ -18,7 +18,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const { message, conversationId: thread_id, model, toolIds } = JSON.parse(req.body);
 
       const app = await getAgentApp(model, toolIds as string[]);
-
+      console.log('message-----content', message);
       for await (const event of await app.streamEvents(
         { messages: [new HumanMessage({ content: message })] },
         { configurable: { thread_id }, version: 'v2' }
