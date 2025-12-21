@@ -22,9 +22,10 @@ export default function UserInput({
   handleKeyPress: (
     e: React.KeyboardEvent<HTMLTextAreaElement>,
     model: string,
-    selectedTools: string[]
+    selectedTools: string[],
+    images: File[]
   ) => void;
-  handleSendMessage: (model: string, selectedTools: string[]) => void;
+  handleSendMessage: (model: string, selectedTools: string[], images: File[]) => void;
   list: { name: string; value: string }[];
   toolList: Tool[];
 }) {
@@ -99,7 +100,12 @@ export default function UserInput({
               <textarea
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
-                onKeyPress={(e) => handleKeyPress(e, model, selectedTools)}
+                onKeyPress={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    handleKeyPress(e, model, selectedTools, selectedImages);
+                    setSelectedImages([]); // 发送后清空图片
+                  }
+                }}
                 placeholder="输入消息... (按 Enter 发送，Shift+Enter 换行)"
                 className="w-full bg-transparent border-none outline-none resize-none text-text placeholder-text/40 text-sm leading-relaxed"
                 rows={3}
@@ -136,8 +142,11 @@ export default function UserInput({
 
                 {/* 发送按钮 */}
                 <button
-                  onClick={() => handleSendMessage(model, selectedTools)}
-                  disabled={!inputValue?.trim()}
+                  onClick={() => {
+                    handleSendMessage(model, selectedTools, selectedImages);
+                    setSelectedImages([]); // 发送后清空图片
+                  }}
+                  disabled={!inputValue?.trim() && selectedImages.length === 0}
                   className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-primary-4 to-primary-5 hover:from-primary-5 hover:to-primary-5 disabled:from-bd disabled:to-bd disabled:cursor-not-allowed text-white rounded-xl transition-all duration-200 font-medium text-sm shadow-md hover:shadow-lg active:scale-[0.98]"
                 >
                   <span>发送</span>

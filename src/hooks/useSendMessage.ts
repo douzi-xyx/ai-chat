@@ -1,6 +1,16 @@
 import { Dispatch, SetStateAction, useState } from 'react';
-import { Conversation, Message } from '@/types';
+import { Conversation, Message, MessageContent, MessageContentItem } from '@/types';
 import { enqueueSnackbar } from 'notistack';
+
+// 将 File 转换为 base64
+const fileToBase64 = (file: File): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = (error) => reject(error);
+  });
+};
 
 export default function useSendMessage({
   activeConversationId,
@@ -13,13 +23,42 @@ export default function useSendMessage({
 }) {
   const [inputValue, setInputValue] = useState<string>('');
 
-  const handleSendMessage = async (model: string, selectedTools: string[]) => {
-    if (!inputValue.trim()) return;
+  const handleSendMessage = async (model: string, selectedTools: string[], images: File[]) => {
+    if (!inputValue.trim() && images.length === 0) return;
 
     const dateId = Date.now().toString();
+
+    // 处理图片，转换为 base64（提前处理，用于构建用户消息）
+    const imageDataList: { base64: string; mimeType: string }[] = [];
+    for (const image of images) {
+      const base64 = await fileToBase64(image);
+      imageDataList.push({
+        base64,
+        mimeType: image.type,
+      });
+    }
+
+    // 构建用户消息内容
+    let userContent: MessageContent;
+    if (imageDataList.length > 0) {
+      const contentItems: MessageContentItem[] = [];
+      if (inputValue.trim()) {
+        contentItems.push({ type: 'text', text: inputValue });
+      }
+      for (const img of imageDataList) {
+        contentItems.push({
+          type: 'image_url',
+          image_url: { url: img.base64 },
+        });
+      }
+      userContent = contentItems;
+    } else {
+      userContent = inputValue;
+    }
+
     const userMessage: Message = {
       id: 'user-' + dateId,
-      content: inputValue,
+      content: userContent,
       role: 'user',
     };
 
@@ -84,16 +123,23 @@ export default function useSendMessage({
 
     const response = await fetch('/api/chat', {
       method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
       body: JSON.stringify({
         message: inputValue,
         conversationId: nowConversationId,
         model,
         toolIds: selectedTools,
+        images: imageDataList,
       }),
     });
 
     const reader = response.body?.getReader();
     const decoder = new TextDecoder();
+
+    // 缓存区，缓存不完整的json 字符串
+    let buffer = '';
 
     while (true) {
       if (!reader) break;
@@ -102,12 +148,16 @@ export default function useSendMessage({
       const { value } = result;
       // console.log('value', value);
       const text = decoder.decode(value);
-      const lines = text.split('\n\n').filter(Boolean);
-
+      buffer += text;
+      const lines = buffer.split('\n\n');
+      // console.log('lines - 缓存buffer之前', { lines: JSON.parse(JSON.stringify(lines)), buffer });
+      // 把最后一行不完整的json内容放到buffer中
+      buffer = lines.pop() || '';
+      // console.log('lines - 缓存buffer之后', { lines: JSON.parse(JSON.stringify(lines)), buffer });
       for (const line of lines) {
         if (line.startsWith('data: ')) {
           const content = line.split('data: ')[1];
-          console.log('content', content);
+          // console.log('content', content);
           if (content) {
             const data = JSON.parse(content);
             if (!data) continue;
@@ -172,11 +222,12 @@ export default function useSendMessage({
   const handleKeyPress = (
     e: React.KeyboardEvent<HTMLTextAreaElement>,
     model: string,
-    selectedTools: string[]
+    selectedTools: string[],
+    images: File[]
   ) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
-      handleSendMessage(model, selectedTools);
+      handleSendMessage(model, selectedTools, images);
     }
   };
 

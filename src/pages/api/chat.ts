@@ -2,6 +2,15 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import { getAgentApp } from '@/agent/chatbot';
 import { HumanMessage } from '@langchain/core/messages';
 
+// 配置 API 路由以支持更大的请求体（用于图片上传）
+export const config = {
+  api: {
+    bodyParser: {
+      sizeLimit: '10mb',
+    },
+  },
+};
+
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const { method } = req;
 
@@ -15,12 +24,28 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     res.flushHeaders();
 
     try {
-      const { message, conversationId: thread_id, model, toolIds } = JSON.parse(req.body);
+      const body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
+      const { message, conversationId: thread_id, model, toolIds, images } = body;
 
       const app = await getAgentApp(model, toolIds as string[]);
-      console.log('message-----content', message);
+
+      // 构建消息内容，支持多模态（文本 + 图片）
+      let messageContent: any = message;
+      if (images && images.length > 0) {
+        messageContent = [
+          { type: 'text', text: message || '请描述这张图片' },
+          ...images.map((img: { base64: string; mimeType: string }) => ({
+            type: 'image_url',
+            image_url: {
+              url: img.base64,
+            },
+          })),
+        ];
+      }
+
+      console.log('message-----content', message, 'images count:', images?.length || 0);
       for await (const event of await app.streamEvents(
-        { messages: [new HumanMessage({ content: message })] },
+        { messages: [new HumanMessage({ content: messageContent })] },
         { configurable: { thread_id }, version: 'v2' }
       )) {
         if (event.event === 'on_chat_model_stream') {

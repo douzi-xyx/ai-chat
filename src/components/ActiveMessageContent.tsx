@@ -1,6 +1,37 @@
 import { useEffect, useRef, useState } from 'react';
-import { Message } from '@/types';
+import { Message, MessageContent, MessageContentItem } from '@/types';
 import MarkdownRender from './MarkdownRender';
+
+// 渲染消息内容的辅助组件
+function MessageContentRenderer({ content }: { content: MessageContent }) {
+  // 如果是字符串，直接渲染
+  if (typeof content === 'string') {
+    return <MarkdownRender content={content} />;
+  }
+
+  // 如果是数组，渲染每个元素
+  return (
+    <div className="space-y-2">
+      {content.map((item: MessageContentItem, index: number) => {
+        if (item.type === 'text') {
+          return <MarkdownRender key={index} content={item.text} />;
+        }
+        if (item.type === 'image_url') {
+          return (
+            <div key={index} className="mt-2">
+              <img
+                src={item.image_url.url}
+                alt={`图片 ${index + 1}`}
+                className="max-w-full max-h-80 rounded-lg border border-bd/30 object-contain"
+              />
+            </div>
+          );
+        }
+        return null;
+      })}
+    </div>
+  );
+}
 
 export default function ActiveMessageContent({ messages }: { messages: Message[] }) {
   const scrollRef = useRef<HTMLDivElement | null>(null);
@@ -97,7 +128,7 @@ export default function ActiveMessageContent({ messages }: { messages: Message[]
                     className={`${message.role === 'user' ? 'max-w-[75%]' : 'flex-1 w-[0px]'} rounded-3xl px-5 py-3.5 bg-white/55 text-text/80 border border-bd/30 backdrop-blur-sm`}
                   >
                     <div className="whitespace-pre-wrap break-words">
-                      <MarkdownRender content={message.content} />
+                      <MessageContentRenderer content={message.content} />
                     </div>
                     {message.isStreaming && (
                       <span className="inline-block w-1.5 h-4 bg-cyan-400 ml-1 align-middle animate-pulse shadow-[0_0_8px_rgba(34,211,238,0.8)]"></span>
