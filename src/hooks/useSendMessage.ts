@@ -1,5 +1,5 @@
 import { Dispatch, SetStateAction, useState } from 'react';
-import { Conversation, Message, MessageContent, MessageContentItem } from '@/types';
+import { Conversation, Message, MessageContent, MessageContentItem, TextFieldValue } from '@/types';
 import { enqueueSnackbar } from 'notistack';
 
 // 将 File 转换为 base64
@@ -21,16 +21,20 @@ export default function useSendMessage({
   setActiveConversationId: (id: string) => void;
   setConversations: Dispatch<SetStateAction<Conversation[]>>;
 }) {
-  const [inputValue, setInputValue] = useState<string>('');
-
-  const handleSendMessage = async (model: string, selectedTools: string[], images: File[]) => {
-    if (!inputValue.trim() && images.length === 0) return;
+  const handleSendMessage = async (
+    valus: TextFieldValue,
+    model: string,
+    selectedTools: string[],
+    cb?: () => void
+  ) => {
+    const { inputValue, images } = valus;
+    if (!inputValue?.trim() && images?.length === 0) return;
 
     const dateId = Date.now().toString();
 
     // 处理图片，转换为 base64（提前处理，用于构建用户消息）
     const imageDataList: { base64: string; mimeType: string }[] = [];
-    for (const image of images) {
+    for (const image of images || []) {
       const base64 = await fileToBase64(image);
       imageDataList.push({
         base64,
@@ -42,7 +46,7 @@ export default function useSendMessage({
     let userContent: MessageContent;
     if (imageDataList.length > 0) {
       const contentItems: MessageContentItem[] = [];
-      if (inputValue.trim()) {
+      if (inputValue?.trim()) {
         contentItems.push({ type: 'text', text: inputValue });
       }
       for (const img of imageDataList) {
@@ -53,7 +57,7 @@ export default function useSendMessage({
       }
       userContent = contentItems;
     } else {
-      userContent = inputValue;
+      userContent = inputValue || '';
     }
 
     const userMessage: Message = {
@@ -66,7 +70,7 @@ export default function useSendMessage({
 
     // 如果没有会话id，先创建会话id
     if (!activeConversationId) {
-      const name = inputValue.slice(0, 30);
+      const name = inputValue?.slice(0, 30) || '新对话';
       const response = await fetch('/api/session', {
         method: 'POST',
         body: JSON.stringify({ name }),
@@ -97,7 +101,8 @@ export default function useSendMessage({
         )
       );
     }
-    setInputValue('');
+    // setInputValue('');
+    cb?.();
 
     // 创建 AI 消息占位符
     const assistantMessageId = 'assistant-' + dateId;
@@ -221,20 +226,19 @@ export default function useSendMessage({
 
   const handleKeyPress = (
     e: React.KeyboardEvent<HTMLTextAreaElement>,
+    values: TextFieldValue,
     model: string,
     selectedTools: string[],
-    images: File[]
+    cb?: () => void
   ) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
-      handleSendMessage(model, selectedTools, images);
+      handleSendMessage(values, model, selectedTools, cb);
     }
   };
 
   return {
     handleSendMessage,
-    inputValue,
-    setInputValue,
     handleKeyPress,
   };
 }

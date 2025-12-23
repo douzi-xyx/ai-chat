@@ -1,4 +1,4 @@
-@import "tailwindcss";
+@import 'tailwindcss';
 
 :root {
   --normal-primary: #a3a3a3;
@@ -10,12 +10,12 @@
 }
 /* 默认主题 (normal) - 中性色 */
 @theme {
-  --color-primary: #171717;  
-  --color-surface: #f5f5f5;     
-  --color-background: #fafafa;   
-  --color-title: #171717;        
-  --color-text: #262626;       
-  --color-bd: #d4d4d4;  
+  --color-primary: #171717;
+  --color-surface: #f5f5f5;
+  --color-background: #fafafa;
+  --color-title: #171717;
+  --color-text: #262626;
+  --color-bd: #d4d4d4;
   --color-no-active: #fafafa;
   --color-primary-1: #737373;
   --color-primary-2: #525252;
@@ -23,17 +23,17 @@
   --color-primary-4: #262626;
   --color-primary-5: #171717;
   --color-btn-bd: #525252;
-  --color-btn-bd-hover: #
+  --color-btn-bd-hover: #;
 }
 
 /* 雾蓝主题 - 靓蓝色 */
 [data-theme='blue'] {
-  --color-primary: var(--blue-primary);   
-  --color-surface: #e0e7ff;       
-  --color-background: #eef2ff;  
-  --color-title: #171717;        
-  --color-text: #262626;       
-  --color-bd: #d4d4d4;  
+  --color-primary: var(--blue-primary);
+  --color-surface: #e0e7ff;
+  --color-background: #eef2ff;
+  --color-title: #171717;
+  --color-text: #262626;
+  --color-bd: #d4d4d4;
   --color-no-active: #fafafa;
   --color-primary-1: #eef2ff;
   --color-primary-2: #e0e7ff;
@@ -44,12 +44,12 @@
 
 /* 青灰主题 - 紫罗兰 */
 [data-theme='purple'] {
-  --color-primary: #a78bfa;   
-  --color-surface: #ede9fe;       
-  --color-background: #f5f3ff;  
-  --color-title: #171717;        
-  --color-text: #262626;       
-  --color-bd: #d4d4d4;  
+  --color-primary: #a78bfa;
+  --color-surface: #ede9fe;
+  --color-background: #f5f3ff;
+  --color-title: #171717;
+  --color-text: #262626;
+  --color-bd: #d4d4d4;
   --color-no-active: #fafafa;
   --color-primary-1: #f5f3ff;
   --color-primary-2: #ede9fe;
@@ -63,9 +63,10 @@ body {
   background-color: var(--color-background);
   color: var(--color-text);
   /* 添加颜色过渡动画，让切换不生硬 */
-  transition: background-color 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-              color 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-              border-color 0.3s ease;
+  transition:
+    background-color 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+    color 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+    border-color 0.3s ease;
 }
 
 /* 让所有使用这些颜色的元素都有过渡效果 */

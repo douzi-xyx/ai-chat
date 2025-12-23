@@ -7,6 +7,7 @@ import Header from '@/components/Header';
 import UserInput from '@/components/UserInput';
 import ConversationList from '@/components/ConversationList';
 import { toolSets } from '@/agent/tools/toolSets';
+import { MessageContent } from '@/types';
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -75,13 +76,21 @@ export default function Home() {
     handleDeleteConversation,
   } = useConversation();
 
-  const { handleKeyPress, handleSendMessage, inputValue, setInputValue } = useSendMessage({
+  const { handleKeyPress, handleSendMessage } = useSendMessage({
     activeConversationId,
     setActiveConversationId,
     setConversations,
   });
 
   const [model, setModel] = useState(modelList[0]?.value);
+
+  // 更新消息内容
+  const handleMessageUpdate = (messageId: string, newContent: string) => {
+    if (!activeConversationId) return;
+
+    handleSendMessage({ inputValue: newContent }, model, []);
+  };
+
   // console.log('activeConversation', activeConversation);
   return (
     <div
@@ -107,7 +116,10 @@ export default function Home() {
         <div className="flex-1 flex flex-col">
           {/* 历史对话记录列表 */}
           <div className="flex-1 p-6 min-h-0 pb-0">
-            <ActiveMessageContent messages={activeConversation?.messages || []} />
+            <ActiveMessageContent
+              messages={activeConversation?.messages || []}
+              onMessageUpdate={handleMessageUpdate}
+            />
           </div>
 
           {/* 对话输入框 */}
@@ -116,8 +128,6 @@ export default function Home() {
             list={modelList}
             model={model}
             setModel={setModel}
-            inputValue={inputValue}
-            setInputValue={setInputValue}
             handleKeyPress={handleKeyPress}
             handleSendMessage={handleSendMessage}
           />

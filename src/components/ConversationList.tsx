@@ -132,7 +132,9 @@ export default function ConversationList({
             ) : (
               // 正常显示模式
               <>
-                <div className="font-medium text-sm truncate pr-14">{conv.title}</div>
+                <div className="font-medium text-sm truncate pr-14">
+                  {conv.title === '新对话' ? `新对话-${conv.id}` : conv.title}
+                </div>
 
                 {/* 悬停显示的操作按钮 */}
                 <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">

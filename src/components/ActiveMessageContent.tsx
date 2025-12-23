@@ -1,42 +1,248 @@
 import { useEffect, useRef, useState } from 'react';
 import { Message, MessageContent, MessageContentItem } from '@/types';
 import MarkdownRender from './MarkdownRender';
+import { useSnackbar } from 'notistack';
 
-// 渲染消息内容的辅助组件
-function MessageContentRenderer({ content }: { content: MessageContent }) {
-  // 如果是字符串，直接渲染
-  if (typeof content === 'string') {
-    return <MarkdownRender content={content} />;
+// 复制按钮组件
+function CopyButton({ content }: { content: string }) {
+  const { enqueueSnackbar } = useSnackbar();
+
+  // 直接复制内容（优先文本，如果没有文本则复制图片）
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(content);
+      enqueueSnackbar('内容已复制', { variant: 'success' });
+      return;
+    } catch {
+      enqueueSnackbar('复制失败', { variant: 'error' });
+      return;
+    }
+  };
+
+  const hasContent = content.length > 0;
+
+  if (!hasContent) {
+    return null;
   }
 
-  // 如果是数组，渲染每个元素
+  // 对于 assistant 消息，按钮放在消息气泡右上角（绝对定位）
+  const isAssistant = true;
+
   return (
-    <div className="space-y-2">
-      {content.map((item: MessageContentItem, index: number) => {
-        if (item.type === 'text') {
-          return <MarkdownRender key={index} content={item.text} />;
-        }
-        if (item.type === 'image_url') {
-          return (
-            <div key={index} className="mt-2">
-              <img
-                src={item.image_url.url}
-                alt={`图片 ${index + 1}`}
-                className="max-w-full max-h-80 rounded-lg border border-bd/30 object-contain"
-              />
-            </div>
-          );
-        }
-        return null;
-      })}
+    <div className={isAssistant ? 'absolute top-2 left z-10' : 'relative'}>
+      <button
+        onClick={handleCopy}
+        className={`cursor-pointer flex items-center justify-center rounded-md transition-all ${
+          isAssistant
+            ? 'w-6 h-6 bg-surface/90 hover:bg-surface border border-bd/20 text-text/70 hover:text-primary-4 opacity-0 group-hover:opacity-100'
+            : 'w-7 h-7 bg-surface/80 hover:bg-surface border border-bd/30 text-text/60 hover:text-primary-4 opacity-0 group-hover:opacity-100 mb-1'
+        }`}
+        title="复制"
+      >
+        <svg
+          className={isAssistant ? 'w-3.5 h-3.5' : 'w-4 h-4'}
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
+          />
+        </svg>
+      </button>
     </div>
   );
 }
 
-export default function ActiveMessageContent({ messages }: { messages: Message[] }) {
+// 编辑按钮组件
+function EditButton({ onClick }: { onClick: () => void }) {
+  return (
+    <button
+      onClick={onClick}
+      className="cursor-pointer w-6 h-6 flex items-center justify-center rounded-md bg-surface/90 hover:bg-surface border border-bd/20 text-text/70 hover:text-primary-4 opacity-0 group-hover:opacity-100 transition-all absolute top-2 left z-10"
+      title="编辑"
+    >
+      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={2}
+          d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+        />
+      </svg>
+    </button>
+  );
+}
+
+// 用户消息展示
+function UserMessage({
+  content,
+  isEditing,
+  onUpdate,
+  onCancel,
+}: {
+  content: MessageContent;
+  isEditing: boolean;
+  onUpdate?: (newContent: string) => void;
+  onCancel?: () => void;
+}) {
+  // 初始化编辑内容
+  const getInitialText = () => {
+    if (typeof content === 'string') {
+      return content;
+    }
+    const textItems = content.filter((item) => item.type === 'text');
+    return textItems.map((item) => (item.type === 'text' ? item.text : '')).join('\n');
+  };
+
+  const getInitialImages = () => {
+    if (typeof content === 'string') {
+      return [];
+    }
+    const imageItems = content.filter((item) => item.type === 'image_url');
+    return imageItems.map((item) => (item.type === 'image_url' ? item.image_url.url : ''));
+  };
+
+  const [editText, setEditText] = useState(getInitialText);
+  const [editImages, setEditImages] = useState<string[]>(getInitialImages);
+  const textStyle = {
+    fontSize: '0.875rem',
+  };
+
+  // 当进入编辑模式时，重新初始化编辑内容
+  useEffect(() => {
+    if (isEditing) {
+      setEditText(getInitialText());
+      setEditImages(getInitialImages());
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isEditing]);
+
+  // 保存编辑
+  const handleSave = () => {
+    if (!onUpdate || !editText.trim()) return;
+
+    const newContent = editText.trim() || '';
+
+    onUpdate(newContent);
+  };
+
+  // 取消编辑
+  const handleCancel = () => {
+    onCancel?.();
+  };
+
+  // 删除图片
+  const handleRemoveImage = (index: number) => {
+    setEditImages((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  if (isEditing) {
+    return (
+      <div className="space-y-3">
+        {/* 文本输入框 */}
+        <textarea
+          value={editText}
+          onChange={(e) => setEditText(e.target.value)}
+          className="w-full px-3 py-2 text-sm bg-surface border border-bd/50 rounded-lg text-text outline-none focus:border-primary-4 resize-none"
+          rows={4}
+          placeholder="输入消息..."
+          autoFocus
+        />
+
+        {/* 图片预览 */}
+        {editImages.length > 0 && (
+          <div className="flex flex-wrap gap-2">
+            {editImages.map((url, index) => (
+              <div key={index} className="relative group">
+                <img
+                  src={url}
+                  alt={`预览 ${index + 1}`}
+                  className="w-20 h-20 object-cover rounded-lg border border-bd/30"
+                />
+                {/* <button
+                  onClick={() => handleRemoveImage(index)}
+                  className="absolute -top-2 -right-2 w-5 h-5 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity text-xs"
+                >
+                  ×
+                </button> */}
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* 操作按钮 */}
+        <div className="flex items-center gap-2 justify-end">
+          <button
+            onClick={handleCancel}
+            className="px-3 py-1.5 text-sm text-text/60 hover:text-text border border-bd/30 rounded-lg hover:bg-surface transition-colors"
+          >
+            取消
+          </button>
+          <button
+            onClick={handleSave}
+            className="px-3 py-1.5 text-sm bg-primary-4 text-white rounded-lg hover:bg-primary-5 transition-colors"
+          >
+            发送
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // 正常显示模式
+  if (typeof content === 'string') {
+    return (
+      <div className="text-text/90" style={textStyle}>
+        {content}
+      </div>
+    );
+  }
+
+  if (Array.isArray(content)) {
+    return (
+      <div>
+        {content.map((item: MessageContentItem, index: number) => {
+          return item.type === 'text' ? (
+            <div className="text-text/90" style={textStyle} key={index}>
+              {item.text}
+            </div>
+          ) : (
+            <div key={index} className="mt-2">
+              <img
+                src={item.image_url.url}
+                alt={`图片 ${index + 1}`}
+                className="max-w-full max-h-80 rounded-lg border border-bd/30 object-contain w-[120px]"
+              />
+            </div>
+          );
+        })}
+      </div>
+    );
+  }
+
+  return null;
+}
+
+// AI消息展示
+function AssistantMessage({ content }: { content: string }) {
+  return <MarkdownRender content={content} />;
+}
+
+export default function ActiveMessageContent({
+  messages,
+  onMessageUpdate,
+}: {
+  messages: Message[];
+  onMessageUpdate?: (messageId: string, newContent: string) => void;
+}) {
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const [autoScroll, setAutoScroll] = useState(true);
   const lastMessageIdRef = useRef<string | undefined>(undefined);
+  const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
 
   const scrollToBottom = (behavior: ScrollBehavior = 'smooth') => {
     const el = scrollRef.current;
@@ -98,7 +304,7 @@ export default function ActiveMessageContent({ messages }: { messages: Message[]
               messages?.map((message) => (
                 <div
                   key={message.id}
-                  className={`flex items-start gap-3 ${
+                  className={`group flex items-start gap-3 ${
                     message.role === 'user' ? 'flex-row-reverse' : 'flex-row'
                   }`}
                 >
@@ -123,16 +329,47 @@ export default function ActiveMessageContent({ messages }: { messages: Message[]
                     </div>
                   )}
 
-                  {/* 消息气泡 */}
+                  {/* 消息气泡容器 */}
                   <div
-                    className={`${message.role === 'user' ? 'max-w-[75%]' : 'flex-1 w-[0px]'} rounded-3xl px-5 py-3.5 bg-white/55 text-text/80 border border-bd/30 backdrop-blur-sm`}
+                    className={`${
+                      message.role === 'user'
+                        ? 'relative flex flex-col max-w-[75%]'
+                        : 'relative flex-1 w-[0px]'
+                    }`}
                   >
-                    <div className="whitespace-pre-wrap break-words">
-                      <MessageContentRenderer content={message.content} />
+                    {/* 消息气泡 */}
+                    <div className="rounded-3xl px-5 py-3.5 bg-white/55 text-text/80 border border-bd/30 backdrop-blur-sm">
+                      <div className="whitespace-pre-wrap break-words">
+                        {message.role === 'assistant' ? (
+                          <AssistantMessage content={message.content as string} />
+                        ) : (
+                          <UserMessage
+                            content={message.content}
+                            isEditing={editingMessageId === message.id}
+                            onUpdate={(newContent) => {
+                              onMessageUpdate?.(message.id, newContent);
+                              setEditingMessageId(null);
+                              scrollToBottom();
+                            }}
+                            onCancel={() => setEditingMessageId(null)}
+                          />
+                        )}
+                      </div>
+                      {message.isStreaming && (
+                        <span className="inline-block w-1.5 h-4 bg-cyan-400 ml-1 align-middle animate-pulse shadow-[0_0_8px_rgba(34,211,238,0.8)]"></span>
+                      )}
                     </div>
-                    {message.isStreaming && (
-                      <span className="inline-block w-1.5 h-4 bg-cyan-400 ml-1 align-middle animate-pulse shadow-[0_0_8px_rgba(34,211,238,0.8)]"></span>
-                    )}
+
+                    {/* 消息工具栏 */}
+                    <div className="relative min-h-[30px] px-2">
+                      {/* 复制按钮（助手消息）或编辑按钮（用户消息） */}
+                      {message.role === 'assistant' && (
+                        <CopyButton content={message.content as string} />
+                      )}
+                      {message.role === 'user' && editingMessageId !== message.id && (
+                        <EditButton onClick={() => setEditingMessageId(message.id)} />
+                      )}
+                    </div>
                   </div>
                 </div>
               ))

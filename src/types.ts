@@ -6,6 +6,12 @@ export type MessageContentItem =
 // 消息内容类型：可以是纯文本字符串，或包含文本和图片的数组
 export type MessageContent = string | MessageContentItem[];
 
+// 输入框内容
+export type TextFieldValue = {
+  inputValue?: string;
+  images?: File[];
+};
+
 export interface Message {
   id: string;
   content: MessageContent;

@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from 'react';
 import styles from '@/styles/index.module.css';
-import { Tool } from '@/types';
+import { TextFieldValue, Tool } from '@/types';
 import ToolSelect from './ToolSelect';
 import ModelSelect from './ModelSelect';
 import ImageUpload from './ImageUpload';
@@ -8,8 +8,6 @@ import ImageUpload from './ImageUpload';
 export default function UserInput({
   model,
   setModel,
-  inputValue,
-  setInputValue,
   handleKeyPress,
   handleSendMessage,
   list,
@@ -17,18 +15,23 @@ export default function UserInput({
 }: {
   model: string;
   setModel: (value: string) => void;
-  inputValue?: string;
-  setInputValue: (value: string) => void;
   handleKeyPress: (
     e: React.KeyboardEvent<HTMLTextAreaElement>,
+    values: TextFieldValue,
     model: string,
     selectedTools: string[],
-    images: File[]
+    cb?: () => void
   ) => void;
-  handleSendMessage: (model: string, selectedTools: string[], images: File[]) => void;
+  handleSendMessage: (
+    values: TextFieldValue,
+    model: string,
+    selectedTools: string[],
+    cb?: () => void
+  ) => void;
   list: { name: string; value: string }[];
   toolList: Tool[];
 }) {
+  const [inputValue, setInputValue] = useState<string>('');
   const [selectedTools, setSelectedTools] = useState<string[]>([]);
   const [selectedImages, setSelectedImages] = useState<File[]>([]);
 
@@ -102,8 +105,17 @@ export default function UserInput({
                 onChange={(e) => setInputValue(e.target.value)}
                 onKeyPress={(e) => {
                   if (e.key === 'Enter' && !e.shiftKey) {
-                    handleKeyPress(e, model, selectedTools, selectedImages);
-                    setSelectedImages([]); // 发送后清空图片
+                    handleKeyPress(
+                      e,
+                      { inputValue, images: selectedImages || [] },
+                      model,
+                      selectedTools,
+                      () => {
+                        setInputValue('');
+                        setSelectedImages([]); // 发送后清空图片
+                      }
+                    );
+                    // setSelectedImages([]); // 发送后清空图片
                   }
                 }}
                 placeholder="输入消息... (按 Enter 发送，Shift+Enter 换行)"
@@ -143,8 +155,16 @@ export default function UserInput({
                 {/* 发送按钮 */}
                 <button
                   onClick={() => {
-                    handleSendMessage(model, selectedTools, selectedImages);
-                    setSelectedImages([]); // 发送后清空图片
+                    handleSendMessage(
+                      { inputValue, images: selectedImages || [] },
+                      model,
+                      selectedTools,
+                      () => {
+                        setInputValue('');
+                        setSelectedImages([]);
+                      }
+                    );
+                    // setSelectedImages([]); // 发送后清空图片
                   }}
                   disabled={!inputValue?.trim() && selectedImages.length === 0}
                   className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-primary-4 to-primary-5 hover:from-primary-5 hover:to-primary-5 disabled:from-bd disabled:to-bd disabled:cursor-not-allowed text-white rounded-xl transition-all duration-200 font-medium text-sm shadow-md hover:shadow-lg active:scale-[0.98]"
