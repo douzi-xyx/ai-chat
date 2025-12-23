@@ -25,7 +25,7 @@ export default function ImageUpload({
     const validFiles = files.filter((file) => {
       const sizeMB = file.size / (1024 * 1024);
       if (sizeMB > maxSize) {
-        console.warn(`文件 ${file.name} 超过 ${maxSize}MB 限制`);
+        // console.warn(`文件 ${file.name} 超过 ${maxSize}MB 限制`);
         return false;
       }
       return true;

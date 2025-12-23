@@ -3,7 +3,7 @@ import { DynamicStructuredTool } from '@langchain/core/tools';
 
 export const createLangChainTools = (toolIds?: string[]) => {
   if (!toolIds || toolIds.length === 0) {
-    console.log('没有选择工具');
+    // console.log('没有选择工具');
     return [];
   }
 
@@ -22,7 +22,7 @@ export const createLangChainTools = (toolIds?: string[]) => {
               const result = await toolConfig.handler(input);
               return result;
             } catch (error) {
-              console.error(`工具${toolConfig.name}执行失败:`, error);
+              // console.error(`工具${toolConfig.name}执行失败:`, error);
               return `工具${toolConfig.name}执行失败: ${error}`;
             }
           },

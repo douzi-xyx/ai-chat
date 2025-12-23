@@ -8,7 +8,7 @@ export const getDateTimeTool: ToolConfig = {
   enabled: true,
   handler: async () => {
     const now = new Date();
-    console.log('getDateTimeTool 结果:', now);
+    // console.log('getDateTimeTool 结果:', now);
     return `当前时间: ${now.toLocaleString('zh-CN', {
       timeZone: 'Asia/Shanghai',
       year: 'numeric',

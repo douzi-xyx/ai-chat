@@ -20,7 +20,7 @@ import Database from 'better-sqlite3';
 
 const createModel = (model?: string) => {
   const [provider, modelName] = model?.split(':') || ['openai', process.env.OPENAI_MODEL_NAME];
-  console.log('provider-----modelName', provider, modelName);
+  // console.log('provider-----modelName', provider, modelName);
 
   if (provider === 'google' && modelName) {
     return new ChatGoogleGenerativeAI({
@@ -48,16 +48,16 @@ const createWorlflow = (modelId?: string, toolIds?: string[]) => {
   const langChainTools = createLangChainTools(toolIds);
 
   const modelWithTools = toolIds?.length ? model.bindTools(langChainTools) : model;
-  console.log('toolIds', toolIds);
+  // console.log('toolIds', toolIds);
   const llmNode = async (state: typeof MessagesAnnotation.State) => {
     try {
-      console.log('llmNode', state.messages);
+      // console.log('llmNode', state.messages);
       const res = await modelWithTools.invoke(state.messages);
 
       return { messages: [res] };
     } catch (error) {
-      console.error('chatbotNode 错误详情:', error);
-      console.error('错误栈:', error instanceof Error ? error.stack : '无栈信息');
+      // console.error('chatbotNode 错误详情:', error);
+      // console.error('错误栈:', error instanceof Error ? error.stack : '无栈信息');
       throw error;
     }
   };
@@ -116,19 +116,19 @@ const dbPath = path.resolve(process.cwd(), 'chat_history.db');
 export const db = new Database(dbPath);
 let checkpointer: SqliteSaver;
 function getCheckpointer() {
-  console.log('判断是否要初始化 SqliteSaver', !checkpointer);
+  // console.log('判断是否要初始化 SqliteSaver', !checkpointer);
   if (!checkpointer) {
-    console.log('初始化 SqliteSaver，数据库路径:');
+    // console.log('初始化 SqliteSaver，数据库路径:');
     try {
       initSessionTable();
       checkpointer = new SqliteSaver(db);
-      console.log('SqliteSaver 初始化成功');
+      // console.log('SqliteSaver 初始化成功');
     } catch (error) {
-      console.error('SqliteSaver 初始化失败:', error);
+      // console.error('SqliteSaver 初始化失败:', error);
       throw error;
     }
   }
-  console.log('checkpointer', checkpointer);
+  // console.log('checkpointer', checkpointer);
   return checkpointer;
 }
 
@@ -138,7 +138,7 @@ export const getAgentApp = (model?: string, toolIds?: string[]) => {
   const sortedToolIds = toolIds?.sort().join(',');
   const cacheKey = `${model || 'default'}-${sortedToolIds || 'none'}`;
   // workflowCache.set(cacheKey, cacheKey);
-  console.log('workflowCache-----keys', cacheKey, Array.from(workflowCache.keys()));
+  // console.log('workflowCache-----keys', cacheKey, Array.from(workflowCache.keys()));
   const cachedWorkflow = workflowCache.get(cacheKey);
   if (cachedWorkflow) {
     return cachedWorkflow;
@@ -153,7 +153,7 @@ export const getAgentApp = (model?: string, toolIds?: string[]) => {
   if (workflowCache.size > 20) {
     const firstKey = workflowCache.keys().next().value;
     workflowCache.delete(firstKey);
-    console.log('删除缓存:', firstKey);
+    // console.log('删除缓存:', firstKey);
   }
   workflowCache.set(cacheKey, app);
 

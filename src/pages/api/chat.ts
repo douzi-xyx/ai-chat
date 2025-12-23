@@ -43,7 +43,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         ];
       }
 
-      console.log('message-----content', message, 'images count:', images?.length || 0);
+      // console.log('message-----content', message, 'images count:', images?.length || 0);
       for await (const event of await app.streamEvents(
         { messages: [new HumanMessage({ content: messageContent })] },
         { configurable: { thread_id }, version: 'v2' }
@@ -66,7 +66,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       res.write(`data: ${JSON.stringify({ type: 'end', thread_id })}\n\n`);
       res.end();
     } catch (error) {
-      console.error('流式输出错误：', error);
+      // console.error('流式输出错误：', error);
       res.write(`data: ${JSON.stringify({ type: 'error', message: '服务器错误' })}\n\n`);
       res.end();
     }

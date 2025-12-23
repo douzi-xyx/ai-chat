@@ -27,7 +27,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         data: updated,
       });
     } catch (error) {
-      console.error('更新会话失败:', error);
+      // console.error('更新会话失败:', error);
       return res.status(500).json({ message: '更新会话失败' });
     }
   }
@@ -41,7 +41,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         message: '删除成功',
       });
     } catch (error) {
-      console.error('删除会话失败:', error);
+      // console.error('删除会话失败:', error);
       return res.status(500).json({ message: '删除会话失败' });
     }
   }
@@ -60,7 +60,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         data: session,
       });
     } catch (error) {
-      console.error('获取会话失败:', error);
+      // console.error('获取会话失败:', error);
       return res.status(500).json({ message: '获取会话失败' });
     }
   }
