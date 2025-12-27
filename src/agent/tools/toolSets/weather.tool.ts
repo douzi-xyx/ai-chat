@@ -4,6 +4,9 @@ import { z } from 'zod';
 type WeatherParams = {
   city: string;
 };
+
+const callHistory = new Map<string, number[]>();
+
 export const weatherTool: ToolConfig<WeatherParams> = {
   name: 'weather',
   description: '查询指定城市的天气',
@@ -13,6 +16,20 @@ export const weatherTool: ToolConfig<WeatherParams> = {
   }),
   handler: async (params?: WeatherParams) => {
     if (!params?.city) return '请提供一个城市名称';
+
+    const historyCacheKey = `weather-${params.city}}`;
+    const now = Date.now();
+    const history = callHistory.get(historyCacheKey) || [];
+    // console.log('weather---history', history);
+    // 找出调用时间小于10分钟的
+    const recent = history.filter((time) => now - time < 1000 * 60 * 10);
+    // console.log('weather---recent', recent);
+    if (recent.length >= 3) {
+      return '查询过于频繁，请稍后再试';
+    }
+
+    recent.push(now);
+    callHistory.set(historyCacheKey, recent);
 
     try {
       const key = process.env.GOOGLE_MAP_API_KEY;
@@ -63,7 +80,7 @@ export const weatherTool: ToolConfig<WeatherParams> = {
             风力: ${weather.windpower}\n
             更新日期: ${weather.reporttime}`;
     } catch (error) {
-      return `查询天气失败: ${error}`;
+      return `查询天气失败`;
     }
   },
 };

@@ -1,6 +1,6 @@
 import { Dispatch, SetStateAction, useState } from 'react';
 import { Conversation, Message, MessageContent, MessageContentItem, TextFieldValue } from '@/types';
-import { enqueueSnackbar } from 'notistack';
+import { useSnackbar } from 'notistack';
 
 // 将 File 转换为 base64
 const fileToBase64 = (file: File): Promise<string> => {
@@ -21,6 +21,7 @@ export default function useSendMessage({
   setActiveConversationId: (id: string) => void;
   setConversations: Dispatch<SetStateAction<Conversation[]>>;
 }) {
+  const { enqueueSnackbar } = useSnackbar();
   const handleSendMessage = async (
     valus: TextFieldValue,
     model: string,

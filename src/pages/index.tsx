@@ -51,6 +51,9 @@ function getToolIcon(toolId: string): string {
     weather: '🌤️',
     get_date_time: '🕐',
     search: '🔍',
+    search_nearby: '🔍',
+    get_location: '📍',
+    route_plan: '🗺️',
   };
   return iconMap[toolId] || '🛠️';
 }

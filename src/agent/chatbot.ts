@@ -17,6 +17,40 @@ import { ToolNode } from '@langchain/langgraph/prebuilt';
 import { createLangChainTools } from './tools/toolConfig';
 import path from 'path';
 import Database from 'better-sqlite3';
+import { MultiServerMCPClient } from '@langchain/mcp-adapters';
+
+const mcp = new MultiServerMCPClient({
+  mcpServers: {
+    'mui-mcp': {
+      type: 'stdio',
+      command: 'npx',
+      args: ['-y', '@mui/mcp@latest'],
+    },
+  },
+  'Figma MCP': {
+    command: 'npx',
+    args: [
+      '-y',
+      'figma-developer-mcp',
+      `--figma-api-key=${process.env.FIGMA_API_KEY || ''}`,
+      '--port=3333',
+      '--stdio',
+    ],
+  },
+  filesystem: {
+    transport: 'stdio',
+    command: 'npx',
+    args: ['-y', '@modelcontextprotocol/server-filesystem', process.cwd()],
+  },
+  'amap-maps': {
+    args: ['-y', '@amap/amap-maps-mcp-server'],
+    command: 'npx',
+    env: {
+      AMAP_MAPS_API_KEY: '',
+    },
+  },
+});
+const mcpTools = await mcp.getTools();
 
 const createModel = (model?: string) => {
   const [provider, modelName] = model?.split(':') || ['openai', process.env.OPENAI_MODEL_NAME];
@@ -45,24 +79,26 @@ const createModel = (model?: string) => {
 const createWorlflow = (modelId?: string, toolIds?: string[]) => {
   const model = createModel(modelId);
 
-  const langChainTools = createLangChainTools(toolIds);
+  const tools = createLangChainTools(toolIds);
 
-  const modelWithTools = toolIds?.length ? model.bindTools(langChainTools) : model;
+  const langChainTools = [...tools, ...mcpTools];
+
+  const modelWithTools = langChainTools?.length ? model.bindTools(langChainTools) : model;
   // console.log('toolIds', toolIds);
   const llmNode = async (state: typeof MessagesAnnotation.State) => {
     try {
-      // console.log('llmNode', state.messages);
+      console.log('llmNode', state.messages);
       const res = await modelWithTools.invoke(state.messages);
 
       return { messages: [res] };
     } catch (error) {
       // console.error('chatbotNode 错误详情:', error);
-      // console.error('错误栈:', error instanceof Error ? error.stack : '无栈信息');
+      console.error('错误栈:', error instanceof Error ? error.stack : '无栈信息');
       throw error;
     }
   };
 
-  if (toolIds?.length) {
+  if (langChainTools?.length) {
     const toolNode = new ToolNode(langChainTools);
 
     const shouldCallToolNode = async (state: typeof MessagesAnnotation.State) => {
