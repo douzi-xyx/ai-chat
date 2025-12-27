@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Message, MessageContent, MessageContentItem } from '@/types';
 import MarkdownRender from './MarkdownRender';
 import { useSnackbar } from 'notistack';
+import ToolUsageDisplay from './ToolUsageDisplay';
 
 // 复制按钮组件
 function CopyButton({ content }: { content: string }) {
@@ -339,6 +340,14 @@ export default function ActiveMessageContent({
                   >
                     {/* 消息气泡 */}
                     <div className="rounded-3xl px-5 py-3.5 bg-white/55 text-text/80 border border-bd/30 backdrop-blur-sm">
+                      {/* Tool usage display for assistant messages */}
+                      {message.role === 'assistant' &&
+                        message.toolsUsed &&
+                        message.toolsUsed.length > 0 && (
+                          <div className="mb-3 -mx-2">
+                            <ToolUsageDisplay toolsUsed={message.toolsUsed} />
+                          </div>
+                        )}
                       <div className="whitespace-pre-wrap break-words">
                         {message.role === 'assistant' ? (
                           <AssistantMessage content={message.content as string} />

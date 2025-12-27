@@ -1,4 +1,4 @@
-import { Dispatch, SetStateAction, useState } from 'react';
+import { Dispatch, SetStateAction } from 'react';
 import { Conversation, Message, MessageContent, MessageContentItem, TextFieldValue } from '@/types';
 import { useSnackbar } from 'notistack';
 
@@ -185,6 +185,31 @@ export default function useSendMessage({
                     : conv
                 )
               );
+            } else if (data.type === 'tool_usage') {
+              // Handle tool usage event
+              const tools = data.tools || [];
+              if (tools.length > 0) {
+                setConversations((prev) =>
+                  prev.map((conv) =>
+                    conv.id === nowConversationId
+                      ? {
+                          ...conv,
+                          messages: conv.messages.map((msg) =>
+                            msg.id === assistantMessageId
+                              ? {
+                                  ...msg,
+                                  toolsUsed: Array.from(
+                                    new Set([...(msg.toolsUsed || []), ...tools])
+                                  ),
+                                }
+                              : msg
+                          ),
+                          updatedAt: new Date(),
+                        }
+                      : conv
+                  )
+                );
+              }
             } else if (data.type === 'end') {
               // console.log('end');
               setConversations((prev) =>

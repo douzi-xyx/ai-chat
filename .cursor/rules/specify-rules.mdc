@@ -1,0 +1,29 @@
+# my-lg-chat-app Development Guidelines
+
+Auto-generated from all feature plans. Last updated: 2025-12-27
+
+## Active Technologies
+
+- TypeScript 5.x, React 19.2.0, Next.js 16.0.7 (001-display-tool-usage)
+
+## Project Structure
+
+```text
+src/
+tests/
+```
+
+## Commands
+
+npm test && npm run lint
+
+## Code Style
+
+TypeScript 5.x, React 19.2.0, Next.js 16.0.7: Follow standard conventions
+
+## Recent Changes
+
+- 001-display-tool-usage: Added TypeScript 5.x, React 19.2.0, Next.js 16.0.7
+
+<!-- MANUAL ADDITIONS START -->
+<!-- MANUAL ADDITIONS END -->

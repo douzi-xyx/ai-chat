@@ -17,6 +17,7 @@ export interface Message {
   content: MessageContent;
   role: 'user' | 'assistant';
   isStreaming?: boolean;
+  toolsUsed?: string[]; // Array of tool identifiers/names used in this message
 }
 
 export interface Conversation {
