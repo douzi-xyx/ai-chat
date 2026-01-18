@@ -1,3 +1,5 @@
+import { ToolCall } from '@langchain/core/messages';
+
 // 消息内容项类型
 export type MessageContentItem =
   | { type: 'text'; text: string }
@@ -18,6 +20,7 @@ export interface Message {
   role: 'user' | 'assistant';
   isStreaming?: boolean;
   toolsUsed?: string[]; // Array of tool identifiers/names used in this message
+  tool_calls?: ToolCall[];
 }
 
 export interface Conversation {

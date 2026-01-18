@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
-import { Tool } from '@/types';
+import { UnifiedToolConfig } from '@/agent/types/tool.type';
 
 interface ToolSelectProps {
-  toolList: Tool[];
+  toolList: UnifiedToolConfig[];
   selectedTools: string[];
   onSelectedToolsChange: (tools: string[]) => void;
 }

@@ -1,10 +1,10 @@
 import { z } from 'zod';
-import { ToolConfig } from '@/agent/typs';
+import { CustomToolConfig } from '@/agent/types/tool.type';
 
 type CalculatorParams = {
   expression: string;
 };
-export const calculatorTool: ToolConfig<CalculatorParams> = {
+export const calculatorTool: CustomToolConfig<CalculatorParams> = {
   name: 'calculator',
   description: '用于数学表达式',
   schema: z.object({

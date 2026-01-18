@@ -4,6 +4,7 @@ import { TextFieldValue, Tool } from '@/types';
 import ToolSelect from './ToolSelect';
 import ModelSelect from './ModelSelect';
 import ImageUpload from './ImageUpload';
+import { UnifiedToolConfig } from '@/agent/types/tool.type';
 
 export default function UserInput({
   model,
@@ -29,7 +30,7 @@ export default function UserInput({
     cb?: () => void
   ) => void;
   list: { name: string; value: string }[];
-  toolList: Tool[];
+  toolList: UnifiedToolConfig[];
 }) {
   const [inputValue, setInputValue] = useState<string>('');
   const [selectedTools, setSelectedTools] = useState<string[]>([]);

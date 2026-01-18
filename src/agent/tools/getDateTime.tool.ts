@@ -1,7 +1,7 @@
-import { ToolConfig } from '@/agent/typs';
 import { z } from 'zod';
+import { CustomToolConfig } from '@/agent/types/tool.type';
 
-export const getDateTimeTool: ToolConfig = {
+export const getDateTimeTool: CustomToolConfig = {
   name: 'get_date_time',
   description: '获取当前日期和时间',
   schema: z.object({}),

@@ -6,8 +6,8 @@ import ActiveMessageContent from '@/components/ActiveMessageContent';
 import Header from '@/components/Header';
 import UserInput from '@/components/UserInput';
 import ConversationList from '@/components/ConversationList';
-import { toolSets } from '@/agent/tools/toolSets';
-import { MessageContent } from '@/types';
+import { getEnabledTools } from '@/agent/config/unified-tool.config';
+import { withAuth } from '@/lib/withAuth';
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -42,30 +42,7 @@ const modelList = [
   },
 ];
 
-/**
- * 根据工具 ID 返回对应的图标
- */
-function getToolIcon(toolId: string): string {
-  const iconMap: Record<string, string> = {
-    calculator: '🔢',
-    weather: '🌤️',
-    get_date_time: '🕐',
-    search: '🔍',
-    search_nearby: '🔍',
-    get_location: '📍',
-    route_plan: '🗺️',
-  };
-  return iconMap[toolId] || '🛠️';
-}
-
-const toolList = Object.entries(toolSets)
-  .filter(([_, tool]) => tool.enabled)
-  .map(([toolId, tool]) => ({
-    id: toolId,
-    name: tool.name,
-    icon: getToolIcon(toolId),
-    description: tool.description,
-  }));
+const toolList = getEnabledTools();
 
 export default function Home() {
   const {
@@ -139,3 +116,17 @@ export default function Home() {
     </div>
   );
 }
+
+export const  getServerSideProps = withAuth(async ({auth})  => {
+  console.log('auth-----', auth);
+  if (!auth.user) {
+      return {
+          redirect: {
+              destination: '/login',
+              permanent: false,
+          },
+      };
+  }
+  
+  return { props: {user: auth.user} };
+})

@@ -240,6 +240,7 @@ export default function ActiveMessageContent({
   messages: Message[];
   onMessageUpdate?: (messageId: string, newContent: string) => void;
 }) {
+  console.log('messages----------------------', messages);
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const [autoScroll, setAutoScroll] = useState(true);
   const lastMessageIdRef = useRef<string | undefined>(undefined);
@@ -341,13 +342,21 @@ export default function ActiveMessageContent({
                     {/* 消息气泡 */}
                     <div className="rounded-3xl px-5 py-3.5 bg-white/55 text-text/80 border border-bd/30 backdrop-blur-sm">
                       {/* Tool usage display for assistant messages */}
-                      {message.role === 'assistant' &&
-                        message.toolsUsed &&
-                        message.toolsUsed.length > 0 && (
-                          <div className="mb-3 -mx-2">
-                            <ToolUsageDisplay toolsUsed={message.toolsUsed} />
-                          </div>
-                        )}
+
+                      {message.role === 'assistant' && (
+                        <>
+                          {(!!message?.toolsUsed?.length || !!message?.tool_calls?.length) && (
+                            <div className="mb-3 -mx-2">
+                              <ToolUsageDisplay
+                                toolsUsed={
+                                  message.toolsUsed ||
+                                  (message?.tool_calls || []).map((tool) => tool.name)
+                                }
+                              />
+                            </div>
+                          )}
+                        </>
+                      )}
                       <div className="whitespace-pre-wrap break-words">
                         {message.role === 'assistant' ? (
                           <AssistantMessage content={message.content as string} />

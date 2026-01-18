@@ -1,56 +1,13 @@
-import {
-  END,
-  MessageGraph,
-  MessagesAnnotation,
-  START,
-  StateGraph,
-  MemorySaver,
-} from '@langchain/langgraph';
+import { END, MessagesAnnotation, START, StateGraph } from '@langchain/langgraph';
 import { ChatOpenAI } from '@langchain/openai';
-import { AIMessage, BaseMessage } from '@langchain/core/messages';
-import { initSessionTable } from './db';
-import { SqliteSaver } from '@langchain/langgraph-checkpoint-sqlite';
 import { ChatGoogleGenerativeAI } from '@langchain/google-genai';
-import { tool } from '@langchain/core/tools';
-import { z } from 'zod';
 import { ToolNode } from '@langchain/langgraph/prebuilt';
-import { createLangChainTools } from './tools/toolConfig';
+import { createLangChainTools } from './utils/tools';
 import path from 'path';
 import Database from 'better-sqlite3';
-import { MultiServerMCPClient } from '@langchain/mcp-adapters';
-
-const mcp = new MultiServerMCPClient({
-  mcpServers: {
-    'mui-mcp': {
-      type: 'stdio',
-      command: 'npx',
-      args: ['-y', '@mui/mcp@latest'],
-    },
-  },
-  'Figma MCP': {
-    command: 'npx',
-    args: [
-      '-y',
-      'figma-developer-mcp',
-      `--figma-api-key=${process.env.FIGMA_API_KEY || ''}`,
-      '--port=3333',
-      '--stdio',
-    ],
-  },
-  filesystem: {
-    transport: 'stdio',
-    command: 'npx',
-    args: ['-y', '@modelcontextprotocol/server-filesystem', process.cwd()],
-  },
-  'amap-maps': {
-    args: ['-y', '@amap/amap-maps-mcp-server'],
-    command: 'npx',
-    env: {
-      AMAP_MAPS_API_KEY: '',
-    },
-  },
-});
-const mcpTools = await mcp.getTools();
+import { SupabaseSaver } from '@skroyc/langgraph-supabase-checkpointer';
+import { supabase } from '../database/supabase';
+import type { SupabaseClient } from '@supabase/supabase-js';
 
 const createModel = (model?: string) => {
   const [provider, modelName] = model?.split(':') || ['openai', process.env.OPENAI_MODEL_NAME];
@@ -76,18 +33,16 @@ const createModel = (model?: string) => {
   });
 };
 
-const createWorlflow = (modelId?: string, toolIds?: string[]) => {
+const createWorkflow = async (modelId?: string, toolIds?: string[]) => {
   const model = createModel(modelId);
 
-  const tools = createLangChainTools(toolIds);
-
-  const langChainTools = [...tools, ...mcpTools];
+  const langChainTools = await createLangChainTools(toolIds);
 
   const modelWithTools = langChainTools?.length ? model.bindTools(langChainTools) : model;
-  // console.log('toolIds', toolIds);
+  // console.log('langChainTools', langChainTools, toolIds);
   const llmNode = async (state: typeof MessagesAnnotation.State) => {
     try {
-      console.log('llmNode', state.messages);
+      // console.log('llmNode', state.messages);
       const res = await modelWithTools.invoke(state.messages);
 
       return { messages: [res] };
@@ -103,7 +58,7 @@ const createWorlflow = (modelId?: string, toolIds?: string[]) => {
 
     const shouldCallToolNode = async (state: typeof MessagesAnnotation.State) => {
       const lastMessage = state.messages[state.messages.length - 1];
-      console.log('shouldCallToolNode', lastMessage.tool_calls);
+      // console.log('shouldCallToolNode', lastMessage.tool_calls);
       if (lastMessage.tool_calls && lastMessage.tool_calls.length > 0) {
         return 'tool';
       }
@@ -147,51 +102,54 @@ const createWorlflow = (modelId?: string, toolIds?: string[]) => {
 
 // 全局存储不同配置的workflow
 
-const workflowCache = new Map<string, ReturnType<typeof createWorlflow>>();
+const workflowCache = new Map<string, ReturnType<typeof createWorkflow>>();
 const dbPath = path.resolve(process.cwd(), 'chat_history.db');
 export const db = new Database(dbPath);
-let checkpointer: SqliteSaver;
-function getCheckpointer() {
+let checkpointer: SupabaseSaver;
+function getCheckpointer(client?: SupabaseClient) {
+  if (client) {
+    return new SupabaseSaver(client);
+  }
   // console.log('判断是否要初始化 SqliteSaver', !checkpointer);
   if (!checkpointer) {
-    // console.log('初始化 SqliteSaver，数据库路径:');
+    console.log('初始化 SupabaseSaver');
     try {
-      initSessionTable();
-      checkpointer = new SqliteSaver(db);
-      // console.log('SqliteSaver 初始化成功');
+      checkpointer = new SupabaseSaver(supabase);
+      console.log('SupabaseSaver 初始化成功');
     } catch (error) {
-      // console.error('SqliteSaver 初始化失败:', error);
+      console.error('SupabaseSaver 初始化失败:', error);
       throw error;
     }
   }
-  // console.log('checkpointer', checkpointer);
+
   return checkpointer;
 }
 
-export const getAgentApp = (model?: string, toolIds?: string[]) => {
+export const getAgentApp = async (model?: string, toolIds?: string[]) => {
   // 初始化checkpointer
-  getCheckpointer();
+  const checkpointer = getCheckpointer();
   const sortedToolIds = toolIds?.sort().join(',');
   const cacheKey = `${model || 'default'}-${sortedToolIds || 'none'}`;
   // workflowCache.set(cacheKey, cacheKey);
   // console.log('workflowCache-----keys', cacheKey, Array.from(workflowCache.keys()));
   const cachedWorkflow = workflowCache.get(cacheKey);
+  // console.log('cachedWorkflow---------', cachedWorkflow);
   if (cachedWorkflow) {
     return cachedWorkflow;
   }
 
-  initSessionTable();
-  const workflow = createWorlflow(model, toolIds);
+  const workflow = await createWorkflow(model, toolIds);
+  // console.log('workflow---------', workflow);
   const app = workflow.compile({
     checkpointer,
   });
 
   if (workflowCache.size > 20) {
     const firstKey = workflowCache.keys().next().value;
-    workflowCache.delete(firstKey);
+    workflowCache.delete(firstKey || '');
     // console.log('删除缓存:', firstKey);
   }
-  workflowCache.set(cacheKey, app);
+  workflowCache.set(cacheKey || '', app as any);
 
   return app;
 };

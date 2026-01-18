@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Conversation, Message } from '@/types';
 import { useSnackbar } from 'notistack';
-import { getAllSessions } from '@/agent/db';
 
 const ACTIVE_CONVERSATION_KEY = 'active-conversation-id';
 
@@ -107,6 +106,7 @@ export default function useConversation() {
           id: messageId,
           content,
           role: isUser ? 'user' : 'assistant',
+          tool_calls: kwargs.tool_calls,
         };
         return message;
       });

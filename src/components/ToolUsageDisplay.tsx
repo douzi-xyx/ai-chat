@@ -1,22 +1,7 @@
 // Note: MUI needs to be installed: pnpm add @mui/material @emotion/react @emotion/styled @mui/icons-material
 // Temporarily using a simple collapsible implementation until MUI is installed
 import { useState } from 'react';
-import { toolSets } from '@/agent/tools/toolSets';
-
-// Import getToolIcon function from index.tsx
-// Note: This function is defined in pages/index.tsx, we'll need to extract it or duplicate the logic
-function getToolIcon(toolId: string): string {
-  const iconMap: Record<string, string> = {
-    calculator: '🔢',
-    weather: '🌤️',
-    get_date_time: '🕐',
-    search: '🔍',
-    search_nearby: '🔍',
-    get_location: '📍',
-    route_plan: '🗺️',
-  };
-  return iconMap[toolId] || '🛠️';
-}
+import { getToolConfigById } from '@/agent/config/unified-tool.config';
 
 interface ToolUsageDisplayProps {
   toolsUsed: string[];
@@ -38,7 +23,7 @@ export default function ToolUsageDisplay({ toolsUsed }: ToolUsageDisplayProps) {
   if (uniqueTools.length === 0) {
     return null;
   }
-
+  console.log('uniqueTools---------', uniqueTools);
   // Map tool IDs to display information with fallback handling (T011: fallback for unknown tool IDs)
   const toolInfo = uniqueTools.map((toolId) => {
     // Handle missing or invalid tool IDs
@@ -51,11 +36,19 @@ export default function ToolUsageDisplay({ toolsUsed }: ToolUsageDisplayProps) {
       };
     }
 
-    const toolConfig = toolSets[toolId as keyof typeof toolSets];
+    const toolConfig = getToolConfigById(toolId);
+    if (!toolConfig) {
+      return {
+        id: 'unknown',
+        name: '未知',
+        icon: '🛠️',
+        description: '',
+      };
+    }
     return {
       id: toolId,
       name: toolConfig?.name || toolId, // Fallback to toolId if name not found
-      icon: getToolIcon(toolId),
+      icon: toolConfig.icon,
       description: toolConfig?.description || '',
     };
   });

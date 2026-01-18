@@ -71,20 +71,18 @@ export default function useSendMessage({
 
     // 如果没有会话id，先创建会话id
     if (!activeConversationId) {
-      const name = inputValue?.slice(0, 30) || '新对话';
       const response = await fetch('/api/session', {
         method: 'POST',
-        body: JSON.stringify({ name }),
+        body: JSON.stringify({ message: userContent }),
       });
       const data = await response.json();
-      const { data: sessionData, message } = data;
-
-      nowConversationId = sessionData?.id;
+      const { data: sessionData } = data;
+      nowConversationId = sessionData.threadId;
       setConversations((conversations) => [
         ...conversations,
         {
           id: nowConversationId || '',
-          title: name,
+          title: sessionData.name,
           messages: [userMessage],
           updatedAt: new Date(sessionData.created_at),
         },
@@ -140,7 +138,7 @@ export default function useSendMessage({
         images: imageDataList,
       }),
     });
-
+// console.log('response------', response);
     const reader = response.body?.getReader();
     const decoder = new TextDecoder();
 
@@ -150,10 +148,12 @@ export default function useSendMessage({
     while (true) {
       if (!reader) break;
       const result = await reader.read();
+      // console.log('result------', result);
       if (result.done) break;
       const { value } = result;
       // console.log('value', value);
       const text = decoder.decode(value);
+      console.log('text------', text);
       buffer += text;
       const lines = buffer.split('\n\n');
       // console.log('lines - 缓存buffer之前', { lines: JSON.parse(JSON.stringify(lines)), buffer });
@@ -185,9 +185,9 @@ export default function useSendMessage({
                     : conv
                 )
               );
-            } else if (data.type === 'tool_usage') {
+            } else if (data.type === 'tool_calls') {
               // Handle tool usage event
-              const tools = data.tools || [];
+              const tools = data.tool_calls || [];
               if (tools.length > 0) {
                 setConversations((prev) =>
                   prev.map((conv) =>
@@ -198,8 +198,8 @@ export default function useSendMessage({
                             msg.id === assistantMessageId
                               ? {
                                   ...msg,
-                                  toolsUsed: Array.from(
-                                    new Set([...(msg.toolsUsed || []), ...tools])
+                                  tool_calls: Array.from(
+                                    new Set([...(msg.tool_calls || []), ...tools])
                                   ),
                                 }
                               : msg
@@ -223,7 +223,7 @@ export default function useSendMessage({
                 )
               );
               break;
-            } else if (data.type === 'error') {
+            } else if (data.type === 'tool_error') {
               // console.error('error', data.message);
               setConversations((prev) =>
                 prev.map((conv) =>
