@@ -21,7 +21,7 @@ const components: Components = {
       {children}
     </blockquote>
   ),
-  code({ inline, className, children, ...props }) {
+  code({ inline, className, children, ...props }: any) {
     const language = className?.match(/language-(\w+)/)?.[1];
     if (inline) {
       return (

@@ -59,7 +59,8 @@ const createWorkflow = async (modelId?: string, toolIds?: string[]) => {
     const shouldCallToolNode = async (state: typeof MessagesAnnotation.State) => {
       const lastMessage = state.messages[state.messages.length - 1];
       // console.log('shouldCallToolNode', lastMessage.tool_calls);
-      if (lastMessage.tool_calls && lastMessage.tool_calls.length > 0) {
+
+      if ((lastMessage as any).tool_calls && (lastMessage as any).tool_calls.length > 0) {
         return 'tool';
       }
       return END;
